@@ -1,7 +1,8 @@
-package ru.yandex.practicum.filmorate.model;
+package ru.yandex.praktikum.filmorate.model;
 
 import lombok.Data;
-import ru.yandex.practicum.filmorate.validate.BeginOfCinemaEra;
+import org.hibernate.validator.constraints.Length;
+import ru.yandex.praktikum.filmorate.validate.BeginOfCinemaEra;
 
 import javax.validation.constraints.*;
 import java.time.LocalDate;

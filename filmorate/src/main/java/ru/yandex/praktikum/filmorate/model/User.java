@@ -1,30 +1,26 @@
-package ru.yandex.practicum.filmorate.model;
+package ru.yandex.praktikum.filmorate.model;
 
-import lombok.Data;
-
-import javax.validation.constraints.*;
+import javax.validation.constraints.Email;
+import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.PastOrPresent;
+import javax.validation.constraints.PositiveOrZero;
 import java.time.LocalDate;
-import java.util.HashSet;
-import java.util.Set;
+import lombok.Data;
 
 @Data
 public class User {
-
-    @PositiveOrZero
+    @PositiveOrZero(message = "id должен быть неотрицательным")
     private int id;
 
-    @NotBlank(message = "Не введен email")
-    @Email(message = "Введен некорректный email")
-    private final String email;
+    @NotBlank(message = "email не должен быть пустым")
+    @Email(message = "некорректный email")
+    private String email;
 
-    @NotNull(message = "Не введен логин")
-    @Pattern(regexp = "\\S+", message = "Введен логин с пробелами")
-    private final String login;
+    @NotBlank(message = "login не должен быть пустым")
+    private String login;
 
     private String name;
 
-    @NotNull(message = "Не введена дата рождения")
     @PastOrPresent
-    private final LocalDate birthday;
-
+    private LocalDate birthday;
 }

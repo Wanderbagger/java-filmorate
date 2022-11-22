@@ -1,4 +1,4 @@
-package ru.yandex.practicum.filmorate.controller;
+package ru.yandex.praktikum.filmorate.controller;
 
 import javax.validation.Valid;
 
