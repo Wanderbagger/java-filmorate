@@ -1,44 +1,50 @@
 package ru.yandex.praktikum.filmorate.controller;
 
+import org.springframework.web.bind.annotation.*;
+import ru.yandex.praktikum.filmorate.exception.ValidationException;
+import ru.yandex.praktikum.filmorate.model.Film;
+import ru.yandex.praktikum.filmorate.model.User;
+
+import javax.swing.*;
 import javax.validation.Valid;
-
-import lombok.AllArgsConstructor;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
-import ru.yandex.practicum.filmorate.exception.IncorrectParameterException;
-import ru.yandex.practicum.filmorate.model.Film;
-import ru.yandex.practicum.filmorate.service.FilmService;
-
-import java.util.List;
+import java.time.LocalDate;
+import java.util.HashMap;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/films")
-@AllArgsConstructor
 public class FilmController {
-    private final FilmService filmService;
+
+    private final static LocalDate FIRST_FILM_DATE = LocalDate.of(1895, 12, 28);
+    private final static int MAX_SIZE_DESCRIPTION = 200;
+    int id = 1;
+
+    Map<Integer, Film> films = new HashMap<>();
+
 
     @GetMapping
-    public List<Film> getFilms() {
-        return filmService.getAllFilms();
-    }
-
-    @GetMapping("/{id}")
-    public Film getFilmById(@PathVariable Integer id) {
-        return filmService.getFilmById(id);
+    public Map<Integer, Film> getUsers() {
+        return films;
     }
 
     @PostMapping
-    public Film createFilm(@Valid @RequestBody Film film) {
-        return filmService.createFilm(film);
+    public Film postFilm(@Valid @RequestBody Film film) {
+        checkReleaseDate(film);
+        film.setId(id++);
+        films.put(film.getId(), film);
+        return film;
     }
 
     @PutMapping
-    public Film updateFilm(@RequestBody Film film) {
-        return filmService.updateFilm(film);
+    public Film putFilm(@Valid @RequestBody Film film) {
+        checkReleaseDate(film);
+        films.put(film.getId(), film);
+        return film;
+    }
+
+    private void checkReleaseDate(Film film) {
+        if (!film.getReleaseDate().isBefore(FIRST_FILM_DATE)) {
+            throw new ValidationException("Кино не существовало до " + FIRST_FILM_DATE.toString());
+        }
+    }
+}
