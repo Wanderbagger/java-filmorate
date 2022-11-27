@@ -1,84 +1,70 @@
-package ru.yandex.praktikum.filmorate.controller;
+package ru.yandex.praktikum.filmorate.controllers;
 
 import lombok.extern.slf4j.Slf4j;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
-import ru.yandex.praktikum.filmorate.exception.ValidationException;
+import org.springframework.web.server.ResponseStatusException;
 import ru.yandex.praktikum.filmorate.model.User;
+import ru.yandex.praktikum.filmorate.validation.ValidationException;
+import ru.yandex.praktikum.filmorate.validation.Validator;
 
 import javax.validation.Valid;
-import java.time.LocalDate;
-import java.util.*;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
 
-
-//@Slf4j
 @RestController
-@RequestMapping("/users")
+@Slf4j
+@RequestMapping(value = "/users")
 public class UserController {
-    private final static Logger log = LoggerFactory.getLogger(UserController.class);
+    private Map<Long, User> users = new HashMap<>();
+    private final Validator validator;
 
+    private long currentId = 1;
 
-    Map<Integer, User> users = new HashMap<>();
-    int id = 1;
+    public UserController(Validator validator) {
+        this.validator = validator;
+    }
 
     @GetMapping
     public Collection<User> getUsers() {
-        log.info("GET /users. Количество пользователей: {}", users.size());
-        System.out.println("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
         return users.values();
     }
 
     @PostMapping
-    public User postUser(@Valid @RequestBody User user) {
-        user.setId(id++);
-        ageCheck(user);
-        loginCheck(user);
+    public User addUser(@Valid @RequestBody User user) {
+        try {
+            validator.validateRequestBody(user);
+        } catch (ValidationException e) {
+            log.warn(e.getMessage() + "\n" + user);
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST);
+        }
+        user.setId(currentId);
+
         users.put(user.getId(), user);
-        log.info("POST /users. Количество пользователей: {}", users.size());
+        currentId++;
+        log.info("Пользователь {} был добавлен", user.getLogin());
+
         return user;
     }
 
     @PutMapping
-    public User putUser(@Valid @RequestBody User user) {
-        ageCheck(user);
-        loginCheck(user);
-        User userOkName = emptyNameCheck(user);
-
-        if (!users.containsKey(userOkName.getId())){
-            log.info("Обновление не существующей задачи {}", userOkName.toString());
-            throw new ValidationException ("Обновление не существующей задачи");
+    public User updateUser(@Valid @RequestBody User user) {
+        try {
+            validator.validateRequestBody(user);
+        } catch (ValidationException e) {
+            log.warn(e.getMessage() + "\n" + user);
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST);
         }
-
-        users.put(userOkName.getId(), userOkName);
-        log.info("PUT /users. Количество пользователей: {}", users.size());
-        return userOkName;
-    }
-
-
-    private void ageCheck(@Valid @RequestBody User user) {
-        LocalDate currentDay = LocalDate.now();
-        if (currentDay.isBefore(user.getBirthday())) {
-            log.info("Не корректная дата рождения. Введено {}", user.getBirthday());
-            throw new ValidationException ("Указана не корректная дата рождения");
-        }
-    }
-
-    private void loginCheck(@Valid @RequestBody User user) {
-        String login = user.getLogin();
-        if (login.contains(" ")) {
-            log.info("Не корректный логин. Введено {}", user.getLogin());
-            throw new ValidationException ("Указан не корректный логин");
-        }
-    }
-
-    private User emptyNameCheck(@Valid @RequestBody User user) {
-        String name = user.getName();
-        if (name.isBlank() || name.equals(null)) {
-            user.setName(user.getLogin());
-        }
+        Optional<User> userToBeUpdated = users.values().stream()
+                .filter(x -> x.getId() == user.getId())
+                .findAny();
+        long id = userToBeUpdated.map(User::getId).orElseThrow(() ->
+                new ResponseStatusException(HttpStatus.NOT_FOUND));
+        user.setId(id);
+        users.put(id, user);
+        log.info("Информация о пользователе {} была обновлена", user.getLogin());
         return user;
     }
-
-
 }

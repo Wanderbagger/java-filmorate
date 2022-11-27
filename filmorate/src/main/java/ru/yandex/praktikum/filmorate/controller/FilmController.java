@@ -1,50 +1,75 @@
-package ru.yandex.praktikum.filmorate.controller;
+package ru.yandex.praktikum.filmorate.controllers;
 
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
-import ru.yandex.praktikum.filmorate.exception.ValidationException;
+import org.springframework.web.server.ResponseStatusException;
 import ru.yandex.praktikum.filmorate.model.Film;
-import ru.yandex.praktikum.filmorate.model.User;
+import ru.yandex.praktikum.filmorate.validation.ValidationException;
+import ru.yandex.praktikum.filmorate.validation.Validator;
 
-import javax.swing.*;
 import javax.validation.Valid;
-import java.time.LocalDate;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
 @RestController
-@RequestMapping("/films")
+@RequestMapping(value = "/films")
+@Slf4j
 public class FilmController {
+    private Map<Long, Film> films = new HashMap<>();
 
-    private final static LocalDate FIRST_FILM_DATE = LocalDate.of(1895, 12, 28);
-    private final static int MAX_SIZE_DESCRIPTION = 200;
-    int id = 1;
+    private final Validator validator;
 
-    Map<Integer, Film> films = new HashMap<>();
+    private long currentId = 1;
 
+    public FilmController(Validator validator) {
+        this.validator = validator;
+    }
 
     @GetMapping
-    public Map<Integer, Film> getUsers() {
-        return films;
+    public Collection<Film> getFilms() {
+        return films.values();
     }
 
     @PostMapping
-    public Film postFilm(@Valid @RequestBody Film film) {
-        checkReleaseDate(film);
-        film.setId(id++);
-        films.put(film.getId(), film);
+    public Film addFilm(@Valid @RequestBody Film film) {
+        try {
+            validator.validateRequestBody(film);
+        } catch (ValidationException e) {
+            log.warn(e.getMessage() + "\n" + film);
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST);
+        }
+
+        film.setId(currentId);
+        films.put(currentId, film);
+        log.info("Фильм {} был добавлен", film.getName());
+        currentId++;
+
         return film;
     }
+
 
     @PutMapping
-    public Film putFilm(@Valid @RequestBody Film film) {
-        checkReleaseDate(film);
-        films.put(film.getId(), film);
-        return film;
-    }
-
-    private void checkReleaseDate(Film film) {
-        if (!film.getReleaseDate().isBefore(FIRST_FILM_DATE)) {
-            throw new ValidationException("Кино не существовало до " + FIRST_FILM_DATE.toString());
+    public Film updateFilm(@Valid @RequestBody Film film) {
+        try {
+            validator.validateRequestBody(film);
+        } catch (ValidationException exception) {
+            log.warn(exception.getMessage() + "\n" + film);
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST);
         }
+
+        Optional<Film> filmToBeUpdated = films.values().stream()
+                .filter(x -> x.getId() == film.getId())
+                .findAny();
+
+        long id = filmToBeUpdated.map(Film::getId).orElseThrow(() ->
+                new ResponseStatusException(HttpStatus.NOT_FOUND));
+        film.setId(id);
+        films.put(id, film);
+        log.info("Фильм {} был обновлен", film.getName());
+
+        return film;
     }
 }

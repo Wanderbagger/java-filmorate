@@ -1,28 +1,27 @@
 package ru.yandex.praktikum.filmorate.model;
 
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
 import lombok.Data;
-import lombok.Getter;
-import org.hibernate.validator.constraints.Length;
+import lombok.NonNull;
 
-import javax.validation.constraints.*;
-import java.time.LocalDate;
+import javax.validation.constraints.NotBlank;
 
 @Data
+@AllArgsConstructor(access = AccessLevel.PUBLIC)
 public class Film {
+    private long id;
 
-    @PositiveOrZero
-    private int id;
+    @NonNull
+    @NotBlank
+    private String name;
 
-    @NotBlank(message = "Введено пустое название")
-    private final String name;
-    @Getter
-    @Length(min = 1, max = 200, message = "Значение должно быть между 1 и 200")
+    @NonNull
     private String description;
 
-    @NotBlank(message = "Дата не введена")
-    private LocalDate releaseDate;
+    @NonNull
+    private String releaseDate;
 
-    @PositiveOrZero(message = "Продолжительность не может быть отрицательной")
-    private Integer duration;
-
+    @NonNull
+    private int duration;
 }
